@@ -23,7 +23,7 @@ func continuouslyReportPosition(p *PositionService, done <-chan interface{}, cal
 		go func() {
 			previous = current
 			current = p.GetPosition()
-			if current != previous {
+			if (current != previous && current != Position{0, 0}) {
 				callback(current)
 			}
 			gotPosition <- nil
@@ -56,8 +56,8 @@ func (d *Dispatcher) dispatch(done <-chan interface{}) {
 }
 
 func main() {
-	// grabber := NewScreenGrabber(0)
-	grabber := NewFakeGrabber("test.png")
+	grabber := NewScreenGrabber(0)
+	// grabber := NewFakeGrabber("test.png")
 	ocr := NewOCRClient()
 	ocr.Init()
 	defer ocr.End()

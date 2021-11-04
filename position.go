@@ -25,7 +25,6 @@ type PositionService struct {
 type Position struct {
 	Latitude  float64 `json:"lat"`
 	Longitude float64 `json:"lng"`
-	height    float64
 }
 
 func NewPositionService(grabber Grabber, ocrEngine OCREngine) *PositionService {
@@ -49,15 +48,14 @@ func getPositionFromText(text string) Position {
 	validID := regexp.MustCompile(`\d{2,5}[.,]{1,2}\d{3}`)
 	location := validID.FindAllString(text, -1)
 
-	if len(location) >= 2 {
-		lng, lat, h := location[0], location[1], location[2]
+	if len(location) == 3 {
+		lng, lat := location[0], location[1]
 
 		lngN := parsePosition(lng)
 		latN := parsePosition(lat)
-		hN := parsePosition(h)
 
-		return Position{latN, lngN, hN}
+		return Position{latN, lngN}
 	} else {
-		return Position{0, 0, 0}
+		return Position{0, 0}
 	}
 }
