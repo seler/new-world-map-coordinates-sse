@@ -6,7 +6,32 @@ package main
 // #include <stdbool.h>
 // #include "coordinates.h"
 import "C"
+import (
+	"bytes"
+	"image"
+	"image/png"
+	"unsafe"
+)
 
-func Hello() string {
-	return C.GoString(C.Hello())
+type OCRClient struct{}
+
+func NewOCRClient() *OCRClient {
+	return &OCRClient{}
+}
+
+func imageToBytes(img image.Image) []byte {
+	buf := new(bytes.Buffer)
+	png.Encode(buf, img)
+	return buf.Bytes()
+}
+
+func (c *OCRClient) GetText(img image.Image) string {
+	imgBytes := imageToBytes(img)
+
+	text := C.GetText(
+		(*C.uchar)(unsafe.Pointer(&imgBytes[0])),
+		C.int(len(imgBytes)),
+	)
+	defer C.free(unsafe.Pointer(text))
+	return C.GoString(text)
 }

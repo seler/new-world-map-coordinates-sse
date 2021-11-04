@@ -2,7 +2,7 @@
 extern "C" {
 #endif
 
-const char* Hello();
+char *GetText(unsigned char* imageBytes, int size);
 
 #ifdef __cplusplus
 }
