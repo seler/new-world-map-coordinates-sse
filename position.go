@@ -23,8 +23,8 @@ type PositionService struct {
 }
 
 type Position struct {
-	latitude  float64
-	longitude float64
+	Latitude  float64 `json:"lat"`
+	Longitude float64 `json:"lng"`
 	height    float64
 }
 
