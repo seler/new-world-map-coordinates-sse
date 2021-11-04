@@ -35,8 +35,15 @@ func main() {
 	display := 0
 
 	grabber := NewGrabber(display)
-	img := grabber.grab()
 	ocr := NewOCRClient()
+	ocr.Init()
+	defer ocr.End()
+
+	img := grabber.grab()
 	text := ocr.GetText(img)
-	fmt.Printf("text >> %s <<", text)
+	fmt.Printf("text1 >> %s <<", text)
+
+	img = grabber.grab()
+	text = ocr.GetText(img)
+	fmt.Printf("text2 >> %s <<", text)
 }

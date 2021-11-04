@@ -2,7 +2,12 @@
 extern "C" {
 #endif
 
-char *GetText(unsigned char* imageBytes, int size);
+typedef void* TessBaseAPI;
+
+TessBaseAPI TessNew();
+void TessInit(TessBaseAPI api_);
+char *TessGetText(TessBaseAPI api_, unsigned char* imageBytes, int size);
+void TessEnd(TessBaseAPI api_);
 
 #ifdef __cplusplus
 }
