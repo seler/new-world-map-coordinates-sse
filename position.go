@@ -1,8 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"image"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
 type OCREngine interface {
@@ -21,9 +23,9 @@ type PositionService struct {
 }
 
 type Position struct {
-	latitude  float32
-	longitude float32
-	height    float32
+	latitude  float64
+	longitude float64
+	height    float64
 }
 
 func NewPositionService(grabber Grabber, ocrEngine OCREngine) *PositionService {
@@ -33,6 +35,29 @@ func NewPositionService(grabber Grabber, ocrEngine OCREngine) *PositionService {
 func (p *PositionService) GetPosition() Position {
 	img := p.grabber.grab()
 	text := p.ocr.GetText(img)
-	fmt.Printf("text2 >> %s <<", text)
-	return Position{0, 0, 0}
+	return getPositionFromText(text)
+}
+
+func parsePosition(text string) float64 {
+	lng := strings.Replace(text, ",", ".", -1)
+	lng = strings.Replace(lng, "..", ".", -1)
+	lngN, _ := strconv.ParseFloat(lng, 64)
+	return lngN
+}
+
+func getPositionFromText(text string) Position {
+	validID := regexp.MustCompile(`\d{2,5}[.,]{1,2}\d{3}`)
+	location := validID.FindAllString(text, -1)
+
+	if len(location) >= 2 {
+		lng, lat, h := location[0], location[1], location[2]
+
+		lngN := parsePosition(lng)
+		latN := parsePosition(lat)
+		hN := parsePosition(h)
+
+		return Position{latN, lngN, hN}
+	} else {
+		return Position{0, 0, 0}
+	}
 }
