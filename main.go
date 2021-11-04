@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"sync"
+	"time"
 )
 
 func main() {
@@ -13,8 +15,23 @@ func main() {
 
 	p := NewPositionService(grabber, ocr)
 
-	position := p.GetPosition()
-	fmt.Printf("position >> %g <<", position)
-	position = p.GetPosition()
-	fmt.Printf("position >> %g <<", position)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		ticker := time.NewTicker(time.Second / 10)
+		var waitForPosition sync.WaitGroup
+
+		for range ticker.C {
+			waitForPosition.Add(1)
+			go func() {
+				position := p.GetPosition()
+				fmt.Printf("position >> %g <<", position)
+				waitForPosition.Done()
+			}()
+			waitForPosition.Wait()
+		}
+		// never executed. how to close ticker and then politely close ocr client?
+		wg.Done()
+	}()
+	wg.Wait()
 }
