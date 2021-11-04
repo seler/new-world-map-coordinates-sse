@@ -1,30 +1,40 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"net/http"
-	"sync"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
 type PositionReportCallback func(position Position)
 
-func continuouslyReportPosition(p *PositionService, wg sync.WaitGroup, callback PositionReportCallback) {
-	ticker := time.NewTicker(time.Second * 2)
-	var waitForPosition sync.WaitGroup
+func continuouslyReportPosition(p *PositionService, done <-chan interface{}, callback PositionReportCallback) {
+	ticker := time.NewTicker(time.Second / 2)
+	gotPosition := make(chan interface{})
+
+	var current, previous Position
 
 	for range ticker.C {
-		waitForPosition.Add(1)
 		go func() {
-			position := p.GetPosition()
-			callback(position)
-			waitForPosition.Done()
+			previous = current
+			current = p.GetPosition()
+			if current != previous {
+				callback(current)
+			}
+			gotPosition <- nil
 		}()
-		waitForPosition.Wait()
+		select {
+		case <-done:
+			return
+		case <-gotPosition:
+			continue
+		}
 	}
-	// never executed. how to close ticker and then politely close ocr client?
-	// - tested, just break out of a loop - use this when detecting interrupt signal - todo
-	wg.Done()
 }
 
 type Dispatcher struct {
@@ -59,18 +69,32 @@ func main() {
 		position: make(chan Position),
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go continuouslyReportPosition(p, wg, func(position Position) {
+	dispatcherDone := make(chan interface{})
+	defer close(dispatcherDone)
+	go dispatcher.dispatch(dispatcherDone)
+
+	reportDone := make(chan interface{})
+	defer close(reportDone)
+	go continuouslyReportPosition(p, reportDone, func(position Position) {
+		fmt.Println(position)
 		dispatcher.position <- position
 	})
 
-	done := make(chan interface{})
-	defer close(done)
-	go dispatcher.dispatch(done)
-
 	http.HandleFunc("/events", getSSEHandler(dispatcher))
-	log.Fatal(http.ListenAndServe(":5000", nil))
+	httpServer := &http.Server{
+		Addr: ":5000",
+	}
 
-	wg.Wait()
+	gracefulShutdown := make(chan os.Signal, 1)
+	signal.Notify(gracefulShutdown, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-gracefulShutdown
+		log.Print("SIGTERM received. Shutdown process initiated\n")
+		dispatcherDone <- nil
+		reportDone <- nil
+		httpServer.Shutdown(context.Background())
+	}()
+
+	log.Fatal(httpServer.ListenAndServe())
 }
