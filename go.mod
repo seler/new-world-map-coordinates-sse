@@ -3,6 +3,7 @@ module github.com/seler/new-world-map-coordinates-sse
 go 1.17
 
 require (
+	github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815
 	github.com/kbinani/screenshot v0.0.0-20210720154843-7d3a670d8329
 	github.com/sirupsen/logrus v1.8.1
 )

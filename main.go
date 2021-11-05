@@ -1,66 +1,18 @@
 package main
 
 import (
-	"context"
-	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
+	"github.com/docopt/docopt-go"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
-type PositionReportCallback func(position Position)
-
-func continuouslyReportPosition(p *PositionService, done <-chan interface{}, callback PositionReportCallback) {
-	ticker := time.NewTicker(time.Second / 2)
-	gotPosition := make(chan interface{})
-
-	var current, previous Position
-
-	for range ticker.C {
-		go func() {
-			previous = current
-			current = p.GetPosition()
-			log.Infof("Position: %+v", current)
-			if (current != previous && current != Position{0, 0}) {
-				callback(current)
-			}
-			gotPosition <- nil
-		}()
-		select {
-		case <-done:
-			return
-		case <-gotPosition:
-			continue
-		}
-	}
-}
-
-type Dispatcher struct {
-	clients  []chan Position
-	position chan Position
-}
-
-func (d *Dispatcher) dispatch(done <-chan interface{}) {
-	for {
-		select {
-		case <-done:
-			return
-		case position := <-d.position:
-			for _, client := range d.clients {
-				client <- position
-			}
-		}
-	}
-}
-
 var version = "not set"
 var logLevel = "not set"
+var saveNotRecognized = "not set"
 
 func init() {
-	log.Infof("new-world-map-coordinates-sse %s", version)
 	log.SetFormatter(&log.TextFormatter{
 		ForceColors:            true,
 		DisableQuote:           true,
@@ -68,55 +20,48 @@ func init() {
 		PadLevelText:           true,
 		FullTimestamp:          true,
 	})
-	if logLevel == "debug" {
-		log.SetLevel(log.DebugLevel)
-	} else {
-		log.SetLevel(log.InfoLevel)
+	log.Infof("new-world-map-coordinates-sse-%s", version)
+	ll, err := logrus.ParseLevel(logLevel)
+	if err != nil {
+		ll = logrus.InfoLevel
 	}
+	log.SetLevel(ll)
 	log.Debug("running in debug log level")
 }
 
+var usage = `New World Map Coordinates SSE: A simple service that exposes New World's player's position as SSE stream.
+Usage:
+  map-coordinates-sse.exe --version
+  map-coordinates-sse.exe [--display=<n>] [--bind=<n>]
+
+Options:
+  -h --help		Show this screen.
+  --version     Show version.
+  --display=<n> Display to use [default: 0].
+  --bind=<n>    addr and port to serve on [default: :5000].
+`
+
 func main() {
+	opts, err := docopt.ParseArgs(usage, os.Args[1:], version)
+	if err != nil {
+		panic(err)
+	}
+
+	display, err := opts.Int("--display")
+	if err != nil {
+		panic(err)
+	}
+	addr, err := opts.String("--bind")
+	if err != nil {
+		panic(err)
+	}
+
 	log.Info("Hold CTRL+C to stop\n")
 
-	grabber := NewScreenGrabber(0)
-	// grabber := NewFakeGrabber("test.png")
-	ocr := NewTesseractClient()
-	ocr.Init()
-
-	p := NewPositionService(grabber, ocr)
-
-	dispatcher := &Dispatcher{
-		clients:  make([]chan Position, 0),
-		position: make(chan Position),
+	log.Debugf("Using display=%v", display)
+	config := Config{
+		display: display,
+		addr:    addr,
 	}
-
-	dispatcherDone := make(chan interface{})
-	defer close(dispatcherDone)
-	go dispatcher.dispatch(dispatcherDone)
-
-	reportDone := make(chan interface{})
-	defer close(reportDone)
-	go continuouslyReportPosition(p, reportDone, func(position Position) {
-		dispatcher.position <- position
-	})
-
-	http.HandleFunc("/events", getSSEHandler(dispatcher))
-	httpServer := &http.Server{
-		Addr: ":5000",
-	}
-
-	gracefulShutdown := make(chan os.Signal, 1)
-	signal.Notify(gracefulShutdown, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		<-gracefulShutdown
-		log.Print("SIGTERM received. Shutdown process initiated\n")
-		dispatcherDone <- nil
-		reportDone <- nil
-		ocr.Close()
-		httpServer.Shutdown(context.Background())
-	}()
-
-	log.Fatal(httpServer.ListenAndServe())
+	mapCoordinates(config)
 }
