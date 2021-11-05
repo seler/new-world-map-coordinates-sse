@@ -12,8 +12,9 @@ import (
 )
 
 type Config struct {
-	display int
-	addr    string
+	display           int
+	addr              string
+	saveNotRecognized bool
 }
 
 type PositionReportCallback func(position Position)
@@ -90,6 +91,7 @@ func mapCoordinates(config Config) {
 	}
 
 	gracefulShutdown := make(chan os.Signal, 1)
+	log.Info("Hold CTRL+C to stop\n")
 	signal.Notify(gracefulShutdown, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {

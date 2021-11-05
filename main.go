@@ -32,36 +32,45 @@ func init() {
 var usage = `New World Map Coordinates SSE: A simple service that exposes New World's player's position as SSE stream.
 Usage:
   map-coordinates-sse.exe --version
-  map-coordinates-sse.exe [--display=<n>] [--bind=<n>]
+  map-coordinates-sse.exe
+  map-coordinates-sse.exe [--bind=<a>]
+  map-coordinates-sse.exe [--display=<n>]
 
 Options:
-  -h --help		Show this screen.
-  --version     Show version.
-  --display=<n> Display to use [default: 0].
-  --bind=<n>    addr and port to serve on [default: :5000].
+  -h --help  Show this screen.
+  --version  Show version.
+  --display=<n>  Display to use [default: 0].
+  --bind=<a>  address and port to serve on [default: :5000].
 `
 
-func main() {
+func gatherConfig() Config {
 	opts, err := docopt.ParseArgs(usage, os.Args[1:], version)
 	if err != nil {
 		panic(err)
 	}
 
-	display, err := opts.Int("--display")
-	if err != nil {
-		panic(err)
-	}
 	addr, err := opts.String("--bind")
 	if err != nil {
 		panic(err)
 	}
-
-	log.Info("Hold CTRL+C to stop\n")
+	display, err := opts.Int("--display")
+	if err != nil {
+		panic(err)
+	}
 
 	log.Debugf("Using display=%v", display)
-	config := Config{
-		display: display,
-		addr:    addr,
+	sNR := false
+	if saveNotRecognized == "save" {
+		sNR = true
 	}
+	return Config{
+		display:           display,
+		addr:              addr,
+		saveNotRecognized: sNR,
+	}
+}
+
+func main() {
+	config := gatherConfig()
 	mapCoordinates(config)
 }
