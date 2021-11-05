@@ -1,8 +1,11 @@
-ECHO "Release"
+set logLevel="debug"
+
+echo y | rmdir release\ /S
 mkdir release\
-go build -o release\
 copy deps\* release\
 mkdir release\tessdata\
 copy tessdata\ release\tessdata\
-ECHO "Done"
-PAUSE
+
+for /f %%i in ('git describe --tags --dirty') do set version=%%i
+
+go build -ldflags "-X main.version=%version% -X main.logLevel=%logLevel%" -o release\

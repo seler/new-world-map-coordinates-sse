@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type PositionReportCallback func(position Position)
@@ -23,6 +23,7 @@ func continuouslyReportPosition(p *PositionService, done <-chan interface{}, cal
 		go func() {
 			previous = current
 			current = p.GetPosition()
+			log.Infof("Position: %+v", current)
 			if (current != previous && current != Position{0, 0}) {
 				callback(current)
 			}
@@ -55,7 +56,29 @@ func (d *Dispatcher) dispatch(done <-chan interface{}) {
 	}
 }
 
+var version = "not set"
+var logLevel = "not set"
+
+func init() {
+	log.Infof("new-world-map-coordinates-sse %s", version)
+	log.SetFormatter(&log.TextFormatter{
+		ForceColors:            true,
+		DisableQuote:           true,
+		DisableLevelTruncation: true,
+		PadLevelText:           true,
+		FullTimestamp:          true,
+	})
+	if logLevel == "debug" {
+		log.SetLevel(log.DebugLevel)
+	} else {
+		log.SetLevel(log.InfoLevel)
+	}
+	log.Debug("running in debug log level")
+}
+
 func main() {
+	log.Info("Hold CTRL+C to stop\n")
+
 	grabber := NewScreenGrabber(0)
 	// grabber := NewFakeGrabber("test.png")
 	ocr := NewTesseractClient()
@@ -75,7 +98,6 @@ func main() {
 	reportDone := make(chan interface{})
 	defer close(reportDone)
 	go continuouslyReportPosition(p, reportDone, func(position Position) {
-		fmt.Println(position)
 		dispatcher.position <- position
 	})
 
