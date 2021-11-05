@@ -10,7 +10,7 @@ import (
 type OCREngine interface {
 	Init()
 	GetText(img image.Image) string
-	End()
+	Close()
 }
 
 type Grabber interface {

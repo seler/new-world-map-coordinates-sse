@@ -58,9 +58,8 @@ func (d *Dispatcher) dispatch(done <-chan interface{}) {
 func main() {
 	grabber := NewScreenGrabber(0)
 	// grabber := NewFakeGrabber("test.png")
-	ocr := NewOCRClient()
+	ocr := NewTesseractClient()
 	ocr.Init()
-	defer ocr.End()
 
 	p := NewPositionService(grabber, ocr)
 
@@ -93,6 +92,7 @@ func main() {
 		log.Print("SIGTERM received. Shutdown process initiated\n")
 		dispatcherDone <- nil
 		reportDone <- nil
+		ocr.Close()
 		httpServer.Shutdown(context.Background())
 	}()
 
