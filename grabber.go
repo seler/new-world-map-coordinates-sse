@@ -19,7 +19,7 @@ func NewScreenGrabber(display int) *ScreenGrabber {
 	positionInfoBounds := image.Rect(
 		bounds.Max.X-286,
 		bounds.Min.Y+19,
-		bounds.Max.X-5,
+		bounds.Max.X-65,
 		bounds.Min.Y+35)
 	return &ScreenGrabber{display, positionInfoBounds}
 }

@@ -18,20 +18,33 @@ type Config struct {
 }
 
 type PositionReportCallback func(position Position)
+type PositionVector []Position
+
+const MAX_POSITIONS = 5
 
 func continuouslyReportPosition(p *PositionService, done <-chan interface{}, callback PositionReportCallback) {
-	ticker := time.NewTicker(time.Second / 2)
+	ticker := time.NewTicker(time.Second / 5)
 	gotPosition := make(chan interface{})
 
+	vector := make(PositionVector, MAX_POSITIONS)
 	var current, previous Position
 
 	for range ticker.C {
 		go func() {
 			previous = current
-			current = p.GetPosition()
-			log.Infof("Position: %+v", current)
-			if (current != previous && current != Position{0, 0}) {
-				callback(current)
+			new, err := p.GetPosition()
+			if err != nil {
+				// ignore error and try again in next tick
+				log.Debug(err)
+			} else {
+				vector = append(vector[1:], new)
+				current = new
+				log.Infof("Position: %+v", current)
+				log.Debugf("Distance: %v", previous.distance(current))
+				distance := previous.distance(current)
+				if distance > 0.1 && distance < 10 {
+					callback(current)
+				}
 			}
 			gotPosition <- nil
 		}()
