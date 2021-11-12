@@ -1,4 +1,4 @@
-package main
+package grabber
 
 import (
 	"image"
@@ -24,7 +24,7 @@ func NewScreenGrabber(display int) *ScreenGrabber {
 	return &ScreenGrabber{display, positionInfoBounds}
 }
 
-func (g ScreenGrabber) grab() image.Image {
+func (g ScreenGrabber) Grab() image.Image {
 	img, err := screenshot.CaptureRect(g.bounds)
 	if err != nil {
 		panic(err)

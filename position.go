@@ -18,7 +18,7 @@ type OCREngine interface {
 }
 
 type Grabber interface {
-	grab() image.Image
+	Grab() image.Image
 }
 
 type PositionService struct {
@@ -42,7 +42,7 @@ func NewPositionService(grabber Grabber, ocrEngine OCREngine) *PositionService {
 }
 
 func (p *PositionService) GetPosition() (Position, error) {
-	img := p.grabber.grab()
+	img := p.grabber.Grab()
 	text := p.ocr.GetText(img)
 	log.Debugf("Parsed text: %v", text)
 	return getPositionFromText(text)
@@ -51,7 +51,6 @@ func (p *PositionService) GetPosition() (Position, error) {
 func parsePosition(text string) float64 {
 	t := strings.Replace(text, ",", ".", -1)
 	t = strings.Replace(t, "..", ".", -1)
-	t = strings.Replace(t, " ", "", -1)
 	n, _ := strconv.ParseFloat(t, 64)
 	return n
 }
