@@ -8,6 +8,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/seler/new-world-map-coordinates-sse/ocr"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -78,7 +80,7 @@ func (d *Dispatcher) dispatch(done <-chan interface{}) {
 func mapCoordinates(config Config) {
 	grabber := NewScreenGrabber(config.display)
 	// grabber := NewFakeGrabber("test.png")
-	ocr := NewTesseractClient()
+	ocr := ocr.NewTesseractClient()
 	ocr.Init()
 
 	p := NewPositionService(grabber, ocr)

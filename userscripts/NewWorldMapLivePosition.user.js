@@ -14,7 +14,8 @@
 
 const LAT_OFFSET = -14336; // taken from script source at newworld-map.com
 const LNG_OFFSET = 170; // to cover for left pane when closed
-const HISTORY_TIME = 10 * 60 * 1000 // 10 minutes
+const MINUTE = 60 * 1000
+const HISTORY_TIME = 20 * MINUTE
 const SSE_URL = "http://localhost:5000/events"; // stream of coordinates in {lat: float, lng: float} json format
 
 function htmlToElement(html) {

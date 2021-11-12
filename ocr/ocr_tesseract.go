@@ -1,4 +1,4 @@
-package main
+package ocr
 
 // #cgo windows CXXFLAGS: -std=c++0x -Iinclude
 // #cgo windows LDFLAGS: -Ltesseract -llibtesseract-4 -Llept -lliblept-5
