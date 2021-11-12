@@ -46,6 +46,6 @@ func NewFakeGrabber(fileName string) *FakeGrabber {
 	return &FakeGrabber{img}
 }
 
-func (g FakeGrabber) grab() image.Image {
+func (g FakeGrabber) Grab() image.Image {
 	return g.img
 }

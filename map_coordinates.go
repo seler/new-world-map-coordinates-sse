@@ -10,6 +10,7 @@ import (
 
 	"github.com/seler/new-world-map-coordinates-sse/grabber"
 	"github.com/seler/new-world-map-coordinates-sse/ocr"
+	"github.com/seler/new-world-map-coordinates-sse/position"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -20,17 +21,17 @@ type Config struct {
 	saveNotRecognized bool
 }
 
-type PositionReportCallback func(position Position)
-type PositionVector []Position
+type PositionReportCallback func(position position.Position)
+type PositionVector []position.Position
 
 const MAX_POSITIONS = 5
 
-func continuouslyReportPosition(p *PositionService, done <-chan interface{}, callback PositionReportCallback) {
+func continuouslyReportPosition(p *position.PositionService, done <-chan interface{}, callback PositionReportCallback) {
 	ticker := time.NewTicker(time.Second / 5)
 	gotPosition := make(chan interface{})
 
 	vector := make(PositionVector, MAX_POSITIONS)
-	var current, previous Position
+	var current, previous position.Position
 
 	for range ticker.C {
 		go func() {
@@ -43,8 +44,8 @@ func continuouslyReportPosition(p *PositionService, done <-chan interface{}, cal
 				vector = append(vector[1:], new)
 				current = new
 				log.Infof("Position: %+v", current)
-				log.Debugf("Distance: %v", previous.distance(current))
-				distance := previous.distance(current)
+				log.Debugf("Distance: %v", previous.Distance(current))
+				distance := previous.Distance(current)
 				if distance > 0.1 && distance < 10 {
 					callback(current)
 				}
@@ -61,8 +62,8 @@ func continuouslyReportPosition(p *PositionService, done <-chan interface{}, cal
 }
 
 type Dispatcher struct {
-	clients  []chan Position
-	position chan Position
+	clients  []chan position.Position
+	position chan position.Position
 }
 
 func (d *Dispatcher) dispatch(done <-chan interface{}) {
@@ -84,11 +85,11 @@ func mapCoordinates(config Config) {
 	ocr := ocr.NewTesseractClient()
 	ocr.Init()
 
-	p := NewPositionService(grabber, ocr)
+	p := position.NewPositionService(grabber, ocr)
 
 	dispatcher := &Dispatcher{
-		clients:  make([]chan Position, 0),
-		position: make(chan Position),
+		clients:  make([]chan position.Position, 0),
+		position: make(chan position.Position),
 	}
 
 	dispatcherDone := make(chan interface{})
@@ -97,7 +98,7 @@ func mapCoordinates(config Config) {
 
 	reportDone := make(chan interface{})
 	defer close(reportDone)
-	go continuouslyReportPosition(p, reportDone, func(position Position) {
+	go continuouslyReportPosition(p, reportDone, func(position position.Position) {
 		dispatcher.position <- position
 	})
 

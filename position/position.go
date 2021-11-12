@@ -1,4 +1,4 @@
-package main
+package position
 
 import (
 	"fmt"
@@ -31,7 +31,7 @@ type Position struct {
 	Latitude  float64 `json:"lat"`
 }
 
-func (from Position) distance(to Position) float64 {
+func (from Position) Distance(to Position) float64 {
 	return math.Sqrt(
 		math.Pow(from.Latitude-to.Latitude, 2) + math.Pow(from.Longitude-to.Longitude, 2),
 	)
@@ -58,7 +58,7 @@ func parsePosition(text string) float64 {
 const MIN_LNG, MIN_LAT, MAX_LNG, MAX_LAT = 4000, 0, 15000, 11000
 
 func getPositionFromText(text string) (Position, error) {
-	validID := regexp.MustCompile(`\d{2,5}[.,]{1,2}\d{3}`)
+	validID := regexp.MustCompile(`-?\d{2,5}[.,]{1,2}\d{3}`)
 	location := validID.FindAllString(text, -1)
 
 	if len(location) == 2 {
@@ -73,7 +73,7 @@ func getPositionFromText(text string) (Position, error) {
 			lngN <= MAX_LNG {
 			return Position{lngN, latN}, nil
 		}
-		return Position{lngN, latN}, fmt.Errorf("position (%v, %v) outside of bounds", lngN, latN)
+		return Position{lngN, latN}, fmt.Errorf("position (%v, %v) out of bounds", lngN, latN)
 	} else {
 		return Position{0, 0}, fmt.Errorf("not able to find position in %v", text)
 	}

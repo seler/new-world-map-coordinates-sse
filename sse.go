@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/seler/new-world-map-coordinates-sse/position"
 )
 
 func getSSEHandler(dispatcher *Dispatcher) func(w http.ResponseWriter, r *http.Request) {
@@ -19,7 +21,7 @@ func getSSEHandler(dispatcher *Dispatcher) func(w http.ResponseWriter, r *http.R
 			return
 		}
 
-		sseChannel := make(chan Position)
+		sseChannel := make(chan position.Position)
 		dispatcher.clients = append(dispatcher.clients, sseChannel)
 
 		d := make(chan interface{})
