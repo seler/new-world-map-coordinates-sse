@@ -17,7 +17,7 @@ func NewScreenGrabber(display int) *ScreenGrabber {
 	bounds := screenshot.GetDisplayBounds(display)
 	// seems that New World position info is in same position and scale in all resolutions
 	positionInfoBounds := image.Rect(
-		bounds.Max.X-286,
+		bounds.Max.X-284,
 		bounds.Min.Y+19,
 		bounds.Max.X-67,
 		bounds.Min.Y+35)

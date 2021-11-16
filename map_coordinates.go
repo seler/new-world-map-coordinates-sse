@@ -25,6 +25,8 @@ type PositionReportCallback func(position position.Position)
 type PositionVector []position.Position
 
 const MAX_POSITIONS = 5
+const COLLECT_SAMPLE_DATA = true
+const SAMPLE_DATA_TIMEOUT = 5 * time.Minute
 
 func continuouslyReportPosition(p *position.PositionService, done <-chan interface{}, callback PositionReportCallback) {
 	ticker := time.NewTicker(time.Second / 2)
@@ -32,6 +34,7 @@ func continuouslyReportPosition(p *position.PositionService, done <-chan interfa
 
 	vector := make(PositionVector, MAX_POSITIONS)
 	var current, previous position.Position
+	var lastSampleCollected time.Time = time.Now() // will start collecting after the timeout
 
 	for range ticker.C {
 		go func() {
@@ -48,6 +51,10 @@ func continuouslyReportPosition(p *position.PositionService, done <-chan interfa
 				distance := previous.Distance(current)
 				if distance > 0.1 && distance < 10 {
 					callback(current)
+
+					if COLLECT_SAMPLE_DATA && (current.Timestamp.Sub(lastSampleCollected) > SAMPLE_DATA_TIMEOUT) {
+						lastSampleCollected = current.Timestamp
+					}
 				}
 			}
 			gotPosition <- nil

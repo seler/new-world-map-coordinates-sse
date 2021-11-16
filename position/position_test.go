@@ -5,6 +5,7 @@ import (
 	"image"
 	"strings"
 	"testing"
+	"time"
 )
 
 type FakeOCR struct {
@@ -26,7 +27,7 @@ func (g FakeGrabber) Grab() image.Image {
 }
 
 func TestGetPositionReturnsParsedPosition(t *testing.T) {
-	expected := Position{4123.456, 789.123}
+	expected := Position{4123.456, 789.123, time.Now()}
 	grabber := FakeGrabber{}
 	ocr := &FakeOCR{fmt.Sprintf("%.3f, %.3f", expected.Longitude, expected.Latitude)}
 	p := NewPositionService(grabber, ocr)
@@ -41,7 +42,7 @@ func TestGetPositionReturnsParsedPosition(t *testing.T) {
 }
 
 func TestGetPositionReturnsParsesNegativePosition(t *testing.T) {
-	expected := Position{-4123.456, -789.123}
+	expected := Position{-4123.456, -789.123, time.Now()}
 	grabber := FakeGrabber{}
 	ocr := &FakeOCR{fmt.Sprintf("%.3f, %.3f", expected.Longitude, expected.Latitude)}
 	p := NewPositionService(grabber, ocr)
@@ -53,10 +54,10 @@ func TestGetPositionReturnsParsesNegativePosition(t *testing.T) {
 }
 
 func TestGetPositionRaisesOutOfBounds(t *testing.T) {
-	lngOutOfMinBound := Position{MIN_LNG - 0.001, MIN_LAT + 123.456}
-	lngOutOfMaxBound := Position{MAX_LNG + 0.001, MIN_LAT + 123.456}
-	latOutOfMinBound := Position{MIN_LNG + 1, MIN_LAT - 123.456}
-	latOutOfMaxBound := Position{MIN_LNG + 1, MAX_LAT + 123.456}
+	lngOutOfMinBound := Position{MIN_LNG - 0.001, MIN_LAT + 123.456, time.Now()}
+	lngOutOfMaxBound := Position{MAX_LNG + 0.001, MIN_LAT + 123.456, time.Now()}
+	latOutOfMinBound := Position{MIN_LNG + 1, MIN_LAT - 123.456, time.Now()}
+	latOutOfMaxBound := Position{MIN_LNG + 1, MAX_LAT + 123.456, time.Now()}
 	positions := []Position{
 		lngOutOfMinBound,
 		lngOutOfMaxBound,

@@ -8,6 +8,9 @@ copy deps\* %destination%
 mkdir %destination%tessdata\
 copy tessdata\ %destination%tessdata\
 copy userscripts\ %destination%userscripts\
+copy run.bat %destination%run.bat
+mkdir %destination%img\
+mkdir %destination%samples\
 
 for /f %%i in ('git describe --tags --dirty') do set version=%%i
 
