@@ -27,7 +27,7 @@ type PositionVector []position.Position
 const MAX_POSITIONS = 5
 
 func continuouslyReportPosition(p *position.PositionService, done <-chan interface{}, callback PositionReportCallback) {
-	ticker := time.NewTicker(time.Second / 5)
+	ticker := time.NewTicker(time.Second / 2)
 	gotPosition := make(chan interface{})
 
 	vector := make(PositionVector, MAX_POSITIONS)

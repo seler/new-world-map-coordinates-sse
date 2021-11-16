@@ -48,17 +48,35 @@ func (p *PositionService) GetPosition() (Position, error) {
 	return getPositionFromText(text)
 }
 
+func fixCommonMistakes(text string) string {
+	commonMistakes := [][]string{
+		{"l", "1"},
+		{"L", "1"},
+		{"S", "5"},
+	}
+	for _, m := range commonMistakes {
+		text = strings.Replace(text, m[0], m[1], -1)
+	}
+	return text
+}
+
 func parsePosition(text string) float64 {
-	t := strings.Replace(text, ",", ".", -1)
-	t = strings.Replace(t, "..", ".", -1)
-	n, _ := strconv.ParseFloat(t, 64)
+	text = strings.Replace(text, ",", ".", -1)
+	text = strings.Replace(text, "..", ".", -1)
+	text = strings.Replace(text, ". ", ".", -1)
+	text = strings.Trim(text, ".")
+	n, err := strconv.ParseFloat(text, 64)
+	if err != nil {
+		log.Errorf("Could not recognize number in position text: %v %v", text, err)
+	}
 	return n
 }
 
 const MIN_LNG, MIN_LAT, MAX_LNG, MAX_LAT = 4000, 0, 15000, 11000
 
 func getPositionFromText(text string) (Position, error) {
-	validID := regexp.MustCompile(`-?\d{2,5}[.,]{1,2}\d{3}`)
+	text = fixCommonMistakes(text)
+	validID := regexp.MustCompile(`-?\d{2,5}[.,]{1,2}[ ]?\d{3}[.,]`)
 	location := validID.FindAllString(text, -1)
 
 	if len(location) == 2 {

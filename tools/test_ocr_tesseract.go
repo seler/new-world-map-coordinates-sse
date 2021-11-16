@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"image/png"
+	"os"
 	"strings"
 
 	"github.com/seler/new-world-map-coordinates-sse/ocr"
@@ -20,10 +21,8 @@ var testImages = [][]string{
 }
 
 // Cannot do an actual go unit test because of compilation of C/C++ deps
-func main() {
-	ocr := ocr.NewTesseractClient()
-	ocr.Init()
 
+func doTestImages(t *ocr.TesseractClient) {
 	for i, v := range testImages {
 		lng, lat, b64Image := v[0], v[1], v[2]
 
@@ -31,13 +30,35 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		got := ocr.GetText(img)
+		got := t.GetText(img)
 		got = strings.Replace(got, ",", ".", -1)
 		got = strings.Replace(got, "..", ".", -1)
 
 		if !(strings.Contains(got, lng) && strings.Contains(got, lat)) {
 			fmt.Printf("%d: got %v but expected %v, %v\n", i, got, lng, lat)
+			// panic("a")
 		}
 	}
-	ocr.Close()
+}
+
+func main() {
+	t := ocr.NewTesseractClient()
+	t.Init()
+	if len(os.Args[1:]) == 1 {
+		filename := os.Args[1]
+		f, err := os.Open(filename)
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+		img, err := png.Decode(f)
+		if err != nil {
+			panic(err)
+		}
+		got := t.GetText(img)
+		fmt.Println(got)
+	} else {
+		doTestImages(t)
+	}
+	t.Close()
 }
