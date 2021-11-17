@@ -11,6 +11,8 @@ import (
 var version = "not set"
 var logLevel = "not set"
 var saveNotRecognized = "not set"
+var collectSamples = "not set"
+var saveImages = "not set"
 
 func init() {
 	log.SetFormatter(&log.TextFormatter{
@@ -63,10 +65,20 @@ func gatherConfig() Config {
 	if saveNotRecognized == "save" {
 		sNR = true
 	}
+	cS := false
+	if collectSamples == "true" {
+		cS = true
+	}
+	sI := false
+	if saveImages == "true" {
+		sI = true
+	}
 	return Config{
 		display:           display,
 		addr:              addr,
 		saveNotRecognized: sNR,
+		collectSamples:    cS,
+		saveImages:        sI,
 	}
 }
 

@@ -20,12 +20,13 @@ func imageToBytes(img image.Image) []byte {
 }
 
 type TesseractClient struct {
-	api C.TessBaseAPI
+	api        C.TessBaseAPI
+	saveImages bool
 }
 
-func NewTesseractClient() *TesseractClient {
+func NewTesseractClient(saveImages bool) *TesseractClient {
 	api := C.TessNew()
-	return &TesseractClient{api}
+	return &TesseractClient{api, saveImages}
 }
 
 func (t *TesseractClient) Init() {
@@ -35,10 +36,16 @@ func (t *TesseractClient) Init() {
 func (t *TesseractClient) GetText(img image.Image) string {
 	imgBytes := imageToBytes(img)
 
+	saveImages := 0
+	if t.saveImages {
+		saveImages = 1
+	}
+
 	text := C.TessGetText(
 		t.api,
 		(*C.uchar)(unsafe.Pointer(&imgBytes[0])),
 		C.int(len(imgBytes)),
+		C.int(saveImages),
 	)
 	defer C.free(unsafe.Pointer(text))
 	return C.GoString(text)

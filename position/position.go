@@ -29,6 +29,7 @@ type PositionService struct {
 	grabber             Grabber
 	ocr                 OCREngine
 	lastSampleCollected time.Time
+	collectSamples      bool
 }
 
 type Position struct {
@@ -46,8 +47,8 @@ func (from Position) Distance(to Position) float64 {
 	)
 }
 
-func NewPositionService(grabber Grabber, ocrEngine OCREngine) *PositionService {
-	return &PositionService{grabber, ocrEngine, time.Now()}
+func NewPositionService(grabber Grabber, ocrEngine OCREngine, collectSamples bool) *PositionService {
+	return &PositionService{grabber, ocrEngine, time.Now(), collectSamples}
 }
 
 func saveSample(position Position, img image.Image, text string, err error) {
@@ -105,7 +106,9 @@ func (p *PositionService) GetPosition() (Position, error) {
 
 	if COLLECT_SAMPLE_DATA && (position.Timestamp.Sub(p.lastSampleCollected) > SAMPLE_DATA_TIMEOUT) {
 		p.lastSampleCollected = position.Timestamp
-		go saveSample(position, img, text, err)
+		if p.collectSamples {
+			go saveSample(position, img, text, err)
+		}
 	}
 
 	return position, err
@@ -116,6 +119,8 @@ func fixCommonMistakes(text string) string {
 		{"l", "1"},
 		{"L", "1"},
 		{"S", "5"},
+		{"B", "8"},
+		{"&", "8"},
 	}
 	for _, m := range commonMistakes {
 		text = strings.Replace(text, m[0], m[1], -1)
@@ -139,7 +144,7 @@ const MIN_LNG, MIN_LAT, MAX_LNG, MAX_LAT = 4000, 0, 15000, 11000
 
 func getPositionFromText(text string) (Position, error) {
 	text = fixCommonMistakes(text)
-	validID := regexp.MustCompile(`-?\d{2,5}[.,]{1,2}[ ]?\d{3}[.,]`)
+	validID := regexp.MustCompile(`-?\d{2,5}[.,]{1,2}[ ]?\d{3}`)
 	location := validID.FindAllString(text, -1)
 
 	now := time.Now()

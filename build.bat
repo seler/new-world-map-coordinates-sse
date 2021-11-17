@@ -1,6 +1,8 @@
-set logLevel=debug
+set logLevel=info
 set destination=build\
 set fileName=map-coordinates-sse.exe
+set collectSamples=false
+set saveImages=false
 
 echo y | rmdir %destination% /S
 mkdir %destination%
@@ -14,4 +16,4 @@ mkdir %destination%samples\
 
 for /f %%i in ('git describe --tags --dirty') do set version=%%i
 
-go build -ldflags "-X main.version=%version% -X main.logLevel=%logLevel%" -o %destination%%fileName%
+go build -ldflags "-X main.version=%version% -X main.logLevel=%logLevel% -X main.collectSamples=%collectSamples% -X main.saveImages=%saveImages%" -o %destination%%fileName%

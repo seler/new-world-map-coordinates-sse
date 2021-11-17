@@ -19,14 +19,14 @@ type Config struct {
 	display           int
 	addr              string
 	saveNotRecognized bool
+	collectSamples    bool
+	saveImages        bool
 }
 
 type PositionReportCallback func(position position.Position)
 type PositionVector []position.Position
 
 const MAX_POSITIONS = 5
-const COLLECT_SAMPLE_DATA = true
-const SAMPLE_DATA_TIMEOUT = 5 * time.Minute
 
 func continuouslyReportPosition(p *position.PositionService, done <-chan interface{}, callback PositionReportCallback) {
 	ticker := time.NewTicker(time.Second / 2)
@@ -34,7 +34,6 @@ func continuouslyReportPosition(p *position.PositionService, done <-chan interfa
 
 	vector := make(PositionVector, MAX_POSITIONS)
 	var current, previous position.Position
-	var lastSampleCollected time.Time = time.Now() // will start collecting after the timeout
 
 	for range ticker.C {
 		go func() {
@@ -46,15 +45,11 @@ func continuouslyReportPosition(p *position.PositionService, done <-chan interfa
 			} else {
 				vector = append(vector[1:], new)
 				current = new
-				log.Infof("Position: %+v", current)
+				log.Infof("Position: %.3f, %.3f", current.Longitude, current.Latitude)
 				log.Debugf("Distance: %v", previous.Distance(current))
 				distance := previous.Distance(current)
 				if distance > 0.1 && distance < 10 {
 					callback(current)
-
-					if COLLECT_SAMPLE_DATA && (current.Timestamp.Sub(lastSampleCollected) > SAMPLE_DATA_TIMEOUT) {
-						lastSampleCollected = current.Timestamp
-					}
 				}
 			}
 			gotPosition <- nil
@@ -89,10 +84,10 @@ func (d *Dispatcher) dispatch(done <-chan interface{}) {
 func mapCoordinates(config Config) {
 	grabber := grabber.NewScreenGrabber(config.display)
 	// grabber := NewFakeGrabber("test.png")
-	ocr := ocr.NewTesseractClient()
+	ocr := ocr.NewTesseractClient(config.saveImages)
 	ocr.Init()
 
-	p := position.NewPositionService(grabber, ocr)
+	p := position.NewPositionService(grabber, ocr, config.collectSamples)
 
 	dispatcher := &Dispatcher{
 		clients:  make([]chan position.Position, 0),
