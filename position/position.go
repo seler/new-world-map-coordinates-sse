@@ -116,6 +116,8 @@ func fixCommonMistakes(text string) string {
 		{"l", "1"},
 		{"L", "1"},
 		{"S", "5"},
+		{"B", "8"},
+		{"&", "8"},
 	}
 	for _, m := range commonMistakes {
 		text = strings.Replace(text, m[0], m[1], -1)
@@ -139,7 +141,7 @@ const MIN_LNG, MIN_LAT, MAX_LNG, MAX_LAT = 4000, 0, 15000, 11000
 
 func getPositionFromText(text string) (Position, error) {
 	text = fixCommonMistakes(text)
-	validID := regexp.MustCompile(`-?\d{2,5}[.,]{1,2}[ ]?\d{3}[.,]`)
+	validID := regexp.MustCompile(`-?\d{2,5}[.,]{1,2}[ ]?\d{3}`)
 	location := validID.FindAllString(text, -1)
 
 	now := time.Now()
